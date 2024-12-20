@@ -1,0 +1,66 @@
+services:
+  vault:
+    image: vault:1.13.3
+    container_name: "idktd-vault"
+    restart: always
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_LISTEN_ADDRESS: ${VAULT_ADDRESS}
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN}
+    networks:
+      - idktd-network
+    healthcheck:
+      test: [ "CMD", "vault", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: postgres
+    restart: always
+    container_name: "idktd-db"
+    environment:
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d ${DB_NAME} -U ${DB_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - idktd-network
+  
+  redis:
+    image: redis:alpine
+    restart: always
+    container_name: "idktd-redis"
+    volumes:
+      - redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - idktd-network
+
+volumes:
+  postgres:
+    driver: local
+  redis:
+    driver: local
+
+networks:
+  idktd-network:
+    name: idktd-network
+    driver: bridge
