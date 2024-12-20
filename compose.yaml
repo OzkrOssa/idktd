@@ -8,6 +8,8 @@ services:
     cap_add:
       - IPC_LOCK
     environment:
+      VAULT_ADDR: ${VAULT_ADDRESS}
+      VAULT_API_ADDR: ${VAULT_ADDRESS}
       VAULT_DEV_LISTEN_ADDRESS: ${VAULT_ADDRESS}
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN}
     networks:
