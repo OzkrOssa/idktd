@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/OzkrOssa/idktd/internal/users/core/domain"
-	mock_userrepo "github.com/OzkrOssa/idktd/internal/users/core/port/mock"
+	"github.com/OzkrOssa/idktd/internal/users/core/port/mock"
 	"github.com/OzkrOssa/idktd/internal/users/core/service"
 	"github.com/OzkrOssa/idktd/internal/users/core/util"
 	mock_cache "github.com/OzkrOssa/idktd/pkg/storage/cache/mock"
@@ -51,13 +51,13 @@ func TestUserService_Register(t *testing.T) {
 
 	testCases := []struct {
 		desc     string
-		mocks    func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository)
+		mocks    func(repo *mock.UserRepository, cache *mock_cache.CacheRepository)
 		input    registerInput
 		expected expectedOutput
 	}{
 		{
 			desc: "Success",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().CreateUser(ctx, userInput).Return(userOutput, nil)
 				cache.EXPECT().Set(ctx, cacheKey, serializedUser, ttl).Return(nil)
 				cache.EXPECT().DeleteByPrefix(ctx, "users:*").Return(nil)
@@ -70,7 +70,7 @@ func TestUserService_Register(t *testing.T) {
 		},
 		{
 			desc: "Fail_DuplicateData",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().CreateUser(ctx, userInput).Return(nil, domain.ErrConflictingData)
 			},
 			input: registerInput{user: userInput},
@@ -81,7 +81,7 @@ func TestUserService_Register(t *testing.T) {
 		},
 		{
 			desc: "Fail_ErrInternal",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().CreateUser(ctx, userInput).Return(nil, domain.ErrInternal)
 			},
 			input: registerInput{user: userInput},
@@ -92,7 +92,7 @@ func TestUserService_Register(t *testing.T) {
 		},
 		{
 			desc: "Fail_SetCache",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().CreateUser(ctx, userInput).Return(userOutput, nil)
 				cache.EXPECT().Set(ctx, cacheKey, serializedUser, ttl).Return(domain.ErrInternal)
 			},
@@ -104,7 +104,7 @@ func TestUserService_Register(t *testing.T) {
 		},
 		{
 			desc: "Fail_DeleteCacheByPrefix",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().CreateUser(ctx, userInput).Return(userOutput, nil)
 				cache.EXPECT().Set(ctx, cacheKey, serializedUser, ttl).Return(nil)
 				cache.EXPECT().DeleteByPrefix(ctx, "users:*").Return(domain.ErrInternal)
@@ -119,7 +119,7 @@ func TestUserService_Register(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			repo := mock_userrepo.NewUserRepository(t)
+			repo := mock.NewUserRepository(t)
 			cache := mock_cache.NewCacheRepository(t)
 			tc.mocks(repo, cache)
 
@@ -160,13 +160,13 @@ func TestUserService_GetUser(t *testing.T) {
 
 	testCases := []struct {
 		desc     string
-		mocks    func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository)
+		mocks    func(repo *mock.UserRepository, cache *mock_cache.CacheRepository)
 		input    getUserTestedInput
 		expected getUserExpectedOutput
 	}{
 		{
 			desc: "Success_FromCache",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(userSerialized, nil)
 			},
 			input: getUserTestedInput{ID: id},
@@ -177,7 +177,7 @@ func TestUserService_GetUser(t *testing.T) {
 		},
 		{
 			desc: "Success_FromDB",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(nil, domain.ErrInternal)
 				repo.EXPECT().GetUserByID(ctx, id).Return(userOutput, nil)
 				cache.EXPECT().Set(ctx, cacheKey, userSerialized, ttl).Return(nil)
@@ -190,7 +190,7 @@ func TestUserService_GetUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_NotFound",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(nil, domain.ErrDataNotFound)
 				repo.EXPECT().GetUserByID(ctx, id).Return(nil, domain.ErrDataNotFound)
 			},
@@ -202,7 +202,7 @@ func TestUserService_GetUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_ErrInternal",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(nil, domain.ErrInternal)
 				repo.EXPECT().GetUserByID(ctx, id).Return(nil, domain.ErrInternal)
 			},
@@ -214,7 +214,7 @@ func TestUserService_GetUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_SetCache",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(nil, domain.ErrInternal)
 				repo.EXPECT().GetUserByID(ctx, id).Return(userOutput, nil)
 				cache.EXPECT().Set(ctx, cacheKey, userSerialized, ttl).Return(domain.ErrInternal)
@@ -227,7 +227,7 @@ func TestUserService_GetUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_Deserialize",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return([]byte("invalid"), nil)
 			},
 			input: getUserTestedInput{ID: id},
@@ -240,7 +240,7 @@ func TestUserService_GetUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			repo := mock_userrepo.NewUserRepository(t)
+			repo := mock.NewUserRepository(t)
 			cache := mock_cache.NewCacheRepository(t)
 			tc.mocks(repo, cache)
 
@@ -289,13 +289,13 @@ func TestUserService_ListUsers(t *testing.T) {
 
 	testCases := []struct {
 		desc     string
-		mocks    func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository)
+		mocks    func(repo *mock.UserRepository, cache *mock_cache.CacheRepository)
 		input    listUsersTestedInput
 		expected listUsersExpectedOutput
 	}{
 		{
 			desc: "Success_FromCache",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(usersSerialized, nil)
 			},
 			input: listUsersTestedInput{
@@ -309,7 +309,7 @@ func TestUserService_ListUsers(t *testing.T) {
 		},
 		{
 			desc: "Success_FromDB",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(nil, domain.ErrDataNotFound)
 				repo.EXPECT().ListUsers(ctx, skip, limit).Return(users, nil)
 				cache.EXPECT().Set(ctx, cacheKey, usersSerialized, ttl).Return(nil)
@@ -325,7 +325,7 @@ func TestUserService_ListUsers(t *testing.T) {
 		},
 		{
 			desc: "Fail_ErrInternal",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(nil, domain.ErrDataNotFound)
 				repo.EXPECT().ListUsers(ctx, skip, limit).Return(nil, domain.ErrInternal)
 			},
@@ -340,7 +340,7 @@ func TestUserService_ListUsers(t *testing.T) {
 		},
 		{
 			desc: "Fail_Deserialize",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return([]byte("invalid"), nil)
 			},
 			input: listUsersTestedInput{
@@ -354,7 +354,7 @@ func TestUserService_ListUsers(t *testing.T) {
 		},
 		{
 			desc: "Fail_SetCache",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				cache.EXPECT().Get(ctx, cacheKey).Return(nil, domain.ErrDataNotFound)
 				repo.EXPECT().ListUsers(ctx, skip, limit).Return(users, nil)
 				cache.EXPECT().Set(ctx, cacheKey, usersSerialized, ttl).Return(domain.ErrInternal)
@@ -372,7 +372,7 @@ func TestUserService_ListUsers(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			repo := mock_userrepo.NewUserRepository(t)
+			repo := mock.NewUserRepository(t)
 			cache := mock_cache.NewCacheRepository(t)
 			tc.mocks(repo, cache)
 
@@ -425,13 +425,13 @@ func TestUserService_UpdateUser(t *testing.T) {
 
 	testCases := []struct {
 		desc     string
-		mocks    func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository)
+		mocks    func(repo *mock.UserRepository, cache *mock_cache.CacheRepository)
 		input    updateUserTestedInput
 		expected updateUserExpectedOutput
 	}{
 		{
 			desc: "Success",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(existingUser, nil)
 				repo.EXPECT().UpdateUser(ctx, userInput).Return(userOutput, nil)
 				cache.EXPECT().Delete(ctx, cacheKey).Return(nil)
@@ -449,7 +449,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_NotFound",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(nil, domain.ErrDataNotFound)
 
 			},
@@ -463,7 +463,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_ErrInternalGetById",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(nil, domain.ErrInternal)
 
 			},
@@ -477,7 +477,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_EmptyData",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(existingUser, nil)
 			},
 			input: updateUserTestedInput{
@@ -492,7 +492,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_SameData",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(existingUser, nil)
 			},
 			input: updateUserTestedInput{
@@ -505,7 +505,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_DuplicateData",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(existingUser, nil)
 				repo.EXPECT().UpdateUser(ctx, userInput).Return(nil, domain.ErrConflictingData)
 			},
@@ -519,7 +519,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_ErrInternalUpdate",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(existingUser, nil)
 				repo.EXPECT().UpdateUser(ctx, userInput).Return(nil, domain.ErrInternal)
 			},
@@ -533,7 +533,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_DeleteCache",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(existingUser, nil)
 				repo.EXPECT().UpdateUser(ctx, userInput).Return(userOutput, nil)
 				cache.EXPECT().Delete(ctx, cacheKey).Return(domain.ErrInternal)
@@ -548,7 +548,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_SetCache",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(existingUser, nil)
 				repo.EXPECT().UpdateUser(ctx, userInput).Return(userOutput, nil)
 				cache.EXPECT().Delete(ctx, cacheKey).Return(nil)
@@ -564,7 +564,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_DeleteByPrefix",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(existingUser, nil)
 				repo.EXPECT().UpdateUser(ctx, userInput).Return(userOutput, nil)
 				cache.EXPECT().Delete(ctx, cacheKey).Return(nil)
@@ -583,7 +583,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			repo := mock_userrepo.NewUserRepository(t)
+			repo := mock.NewUserRepository(t)
 			cache := mock_cache.NewCacheRepository(t)
 			tc.mocks(repo, cache)
 			userService := service.NewUserService(repo, cache)
@@ -608,13 +608,13 @@ func TestUserService_DeleteUser(t *testing.T) {
 
 	testCases := []struct {
 		desc     string
-		mocks    func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository)
+		mocks    func(repo *mock.UserRepository, cache *mock_cache.CacheRepository)
 		input    uint64
 		expected userDeleteExpectedOutput
 	}{
 		{
 			desc: "Success",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(&domain.User{}, nil)
 				cache.EXPECT().Delete(ctx, cacheKey).Return(nil)
 				cache.EXPECT().DeleteByPrefix(ctx, "users:*").Return(nil)
@@ -627,7 +627,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_NotFound",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(nil, domain.ErrDataNotFound)
 			},
 			input: id,
@@ -637,7 +637,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_ErrInternalGetByID",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(nil, domain.ErrInternal)
 			},
 			input: id,
@@ -647,7 +647,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_DeleteCache",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(&domain.User{}, nil)
 				cache.EXPECT().Delete(ctx, cacheKey).Return(domain.ErrInternal)
 			},
@@ -658,7 +658,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_DeleteByPrefix",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(&domain.User{}, nil)
 				cache.EXPECT().Delete(ctx, cacheKey).Return(nil)
 				cache.EXPECT().DeleteByPrefix(ctx, "users:*").Return(domain.ErrInternal)
@@ -670,7 +670,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 		},
 		{
 			desc: "Fail_ErrInternalDelete",
-			mocks: func(repo *mock_userrepo.UserRepository, cache *mock_cache.CacheRepository) {
+			mocks: func(repo *mock.UserRepository, cache *mock_cache.CacheRepository) {
 				repo.EXPECT().GetUserByID(ctx, id).Return(&domain.User{}, nil)
 				cache.EXPECT().Delete(ctx, cacheKey).Return(nil)
 				cache.EXPECT().DeleteByPrefix(ctx, "users:*").Return(nil)
@@ -684,7 +684,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			repo := mock_userrepo.NewUserRepository(t)
+			repo := mock.NewUserRepository(t)
 			cache := mock_cache.NewCacheRepository(t)
 			tc.mocks(repo, cache)
 			userService := service.NewUserService(repo, cache)

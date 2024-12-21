@@ -6,7 +6,7 @@ import (
 	"github.com/OzkrOssa/idktd/internal/users/core/domain"
 )
 
-//go:generate mockery --case=underscore --output=mock --outpkg=mock_userrepo --name=UserRepository --with-expecter=true
+//go:generate mockery --case=underscore --output=mock --outpkg=mock --all --with-expecter=true
 
 // UserRepository is an interface for interacting with user-related data
 type UserRepository interface {
