@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package users.v1;
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+service UserService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_READER = 1;
+  ROLE_AGENT = 2;
+  ROLE_ADMIN = 3;
+}
+
+message User {
+  uint64 id =  1 [(buf.validate.field).uint64.gt = 0];
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 100];
+  string email = 3 [(buf.validate.field).string.email = true];
+  string password = 4 [(buf.validate.field).string.pattern = "^[a-zA-Z0-9]*$"];
+  Role role = 5 [(buf.validate.field).enum.defined_only = true];
+  optional google.protobuf.Timestamp created_at = 6 [(buf.validate.field).timestamp.lt_now = true];
+  optional google.protobuf.Timestamp updated_at = 7 [(buf.validate.field).timestamp.lt_now = true];
+}
+
+message RegisterRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 100];
+  string email = 2 [(buf.validate.field).string.email = true];
+  string password = 3 [(buf.validate.field).string.pattern = "^[a-zA-Z0-9]*$",(buf.validate.field).string.min_len = 8, (buf.validate.field).string.max_len = 72];
+}
+message RegisterResponse { User user = 1; }
+
+message GetUserRequest { uint64 id = 1 [(buf.validate.field).uint64.gt = 0]; }
+message GetUserResponse { User user = 1; }
+
+message UpdateUserRequest {
+  uint64 id =  1 [(buf.validate.field).uint64.gt = 0];
+  optional string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 100];
+  optional string email = 3 [(buf.validate.field).string.email = true];
+  optional string password = 4 [(buf.validate.field).string.pattern = "^[a-zA-Z0-9]*$"];
+  optional Role role = 5 [(buf.validate.field).enum.defined_only = true];
+}
+message UpdateUserResponse { User user = 1; }
+
+message ListUsersRequest {
+  uint64 skip = 1 [(buf.validate.field).uint64.gt = 0];
+  uint64 limit = 2 [(buf.validate.field).uint64.gt = 0];
+}
+message ListUsersResponse { repeated User user = 1; }
+
+message DeleteUserRequest { uint64 id = 1 [(buf.validate.field).uint64.gt = 0]; }
+message DeleteUserResponse {}
