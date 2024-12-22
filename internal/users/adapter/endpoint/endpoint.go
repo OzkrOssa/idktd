@@ -88,14 +88,21 @@ func MakeUpdateUserEndpoint(us port.UserService) endpoint.Endpoint {
 			return nil, err
 		}
 
-		//TODO: fix it
-
 		updateUser := &domain.User{
-			ID:       req.Id,
-			Name:     *req.Name,
-			Email:    *req.Email,
-			Password: *req.Password,
-			Role:     domain.UserRole(*req.Role),
+			ID: req.Id,
+		}
+
+		if req.Name != nil {
+			updateUser.Name = *req.Name
+		}
+		if req.Email != nil {
+			updateUser.Email = *req.Email
+		}
+		if req.Password != nil {
+			updateUser.Password = *req.Password
+		}
+		if req.Role != nil {
+			updateUser.Role = domain.UserRole(req.Role.String())
 		}
 
 		user, err := us.UpdateUser(ctx, updateUser)
