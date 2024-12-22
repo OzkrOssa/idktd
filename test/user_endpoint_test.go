@@ -305,3 +305,197 @@ func TestUserEndpoint_ListUsers(t *testing.T) {
 		})
 	}
 }
+
+func TestUserEndpoint_UpdateUser(t *testing.T) {
+	ctx := context.Background()
+
+	userID := gofakeit.Uint64()
+	name := gofakeit.Name()
+	email := gofakeit.Email()
+	password := gofakeit.Password(true, true, true, true, false, 15)
+	hashedPassword, _ := util.HashPassword(password)
+
+	role := usersv1.Role_ROLE_ADMIN
+
+	request := &usersv1.UpdateUserRequest{
+		Id:       userID,
+		Name:     &name,
+		Email:    &email,
+		Password: &password,
+		Role:     &role,
+	}
+
+	input := &domain.User{
+		ID:       userID,
+		Name:     name,
+		Email:    email,
+		Password: password,
+		Role:     domain.RoleAdmin,
+	}
+
+	expectedResponse := &domain.User{
+		ID:        userID,
+		Name:      name,
+		Email:     email,
+		Password:  hashedPassword,
+		Role:      domain.RoleAdmin,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	testCases := []struct {
+		desc     string
+		mock     func(svc *mock.UserService)
+		input    *usersv1.UpdateUserRequest
+		expected struct {
+			response interface{}
+			err      error
+		}
+	}{
+		{
+			desc: "Success",
+			mock: func(svc *mock.UserService) {
+				svc.EXPECT().UpdateUser(ctx, input).Return(expectedResponse, nil)
+			},
+			input: request,
+			expected: struct {
+				response interface{}
+				err      error
+			}{
+				response: expectedResponse,
+				err:      nil,
+			},
+		},
+		{
+			desc: "Not found",
+			mock: func(svc *mock.UserService) {
+				svc.EXPECT().UpdateUser(ctx, input).Return(nil, domain.ErrDataNotFound)
+			},
+			input: request,
+			expected: struct {
+				response interface{}
+				err      error
+			}{
+				response: nil,
+				err:      domain.ErrDataNotFound,
+			},
+		},
+		{
+			desc: "No update data",
+			mock: func(svc *mock.UserService) {
+				svc.EXPECT().UpdateUser(ctx, input).Return(nil, domain.ErrNoUpdatedData)
+			},
+			input: request,
+			expected: struct {
+				response interface{}
+				err      error
+			}{
+				response: nil,
+				err:      domain.ErrNoUpdatedData,
+			},
+		},
+		{
+			desc: "Internal error",
+			mock: func(svc *mock.UserService) {
+				svc.EXPECT().UpdateUser(ctx, input).Return(nil, domain.ErrInternal)
+			},
+			input: request,
+			expected: struct {
+				response interface{}
+				err      error
+			}{
+				response: nil,
+				err:      domain.ErrInternal,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			mockSvc := mock.NewUserService(t)
+			tc.mock(mockSvc)
+
+			ep := endpoint.NewEndpoint(mockSvc)
+
+			resp, err := ep.UpdateUserEndpoint(ctx, tc.input)
+
+			assert.Equal(t, tc.expected.response, resp)
+			assert.Equal(t, tc.expected.err, err)
+		})
+	}
+}
+
+func TestUserEndpoint_Delete(t *testing.T) {
+	ctx := context.Background()
+
+	userID := gofakeit.Uint64()
+	request := &usersv1.DeleteUserRequest{
+		Id: userID,
+	}
+
+	testCases := []struct {
+		desc     string
+		mock     func(svc *mock.UserService)
+		input    *usersv1.DeleteUserRequest
+		expected struct {
+			response interface{}
+			err      error
+		}
+	}{
+		{
+			desc: "Success",
+			mock: func(svc *mock.UserService) {
+				svc.EXPECT().DeleteUser(ctx, userID).Return(nil)
+			},
+			input: request,
+			expected: struct {
+				response interface{}
+				err      error
+			}{
+				response: nil,
+				err:      nil,
+			},
+		},
+		{
+			desc: "Not found",
+			mock: func(svc *mock.UserService) {
+				svc.EXPECT().DeleteUser(ctx, userID).Return(domain.ErrDataNotFound)
+			},
+			input: request,
+			expected: struct {
+				response interface{}
+				err      error
+			}{
+				response: nil,
+				err:      domain.ErrDataNotFound,
+			},
+		},
+		{
+			desc: "Internal error",
+			mock: func(svc *mock.UserService) {
+				svc.EXPECT().DeleteUser(ctx, userID).Return(domain.ErrInternal)
+			},
+			input: request,
+			expected: struct {
+				response interface{}
+				err      error
+			}{
+				response: nil,
+				err:      domain.ErrInternal,
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			mockSvc := mock.NewUserService(t)
+			tc.mock(mockSvc)
+
+			ep := endpoint.NewEndpoint(mockSvc)
+
+			resp, err := ep.DeleteUserEndpoint(ctx, tc.input)
+
+			assert.Equal(t, tc.expected.response, resp)
+			assert.Equal(t, tc.expected.err, err)
+		})
+	}
+}
