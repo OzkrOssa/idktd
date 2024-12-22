@@ -87,7 +87,7 @@ func encodeUpdateUserResponse(_ context.Context, request interface{}) (response 
 		return nil, status.Errorf(codes.Internal, "invalid type from endpoint")
 	}
 
-	updateUserResponse := &usersv1.RegisterResponse{
+	updateUserResponse := &usersv1.UpdateUserResponse{
 		User: &usersv1.User{
 			Id:        req.ID,
 			Name:      req.Name,
