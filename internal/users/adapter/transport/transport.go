@@ -6,7 +6,9 @@ import (
 	usersv1 "github.com/OzkrOssa/idktd/api/proto/gen/users/v1"
 	"github.com/OzkrOssa/idktd/internal/users/adapter/endpoint"
 	"github.com/OzkrOssa/idktd/internal/users/core/domain"
+	"github.com/go-kit/kit/transport"
 	gt "github.com/go-kit/kit/transport/grpc"
+	kitlog "github.com/go-kit/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -20,13 +22,14 @@ type grpcTransport struct {
 	usersv1.UnimplementedUserServiceServer
 }
 
-func NewGrpcTransport(endpoint endpoint.Endpoint) usersv1.UserServiceServer {
+func NewGrpcTransport(endpoint endpoint.Endpoint, logger kitlog.Logger) usersv1.UserServiceServer {
+	opts := gt.ServerErrorHandler(transport.NewLogErrorHandler(logger))
 	return &grpcTransport{
-		RegisterHandler:   gt.NewServer(endpoint.RegisterEndpoint, decodeRegisterRequest, encodeRegisterResponse),
-		GetUserHandler:    gt.NewServer(endpoint.GetUserEndpoint, decodeGetUserRequest, encodeGetUserResponse),
-		ListUsersHandler:  gt.NewServer(endpoint.ListUserEndpoint, decodeListUsersRequest, encodeListUsersResponse),
-		UpdateUserHandler: gt.NewServer(endpoint.UpdateUserEndpoint, decodeUpdateUserRequest, encodeUpdateUserResponse),
-		DeleteUserHandler: gt.NewServer(endpoint.DeleteUserEndpoint, decodeDeleteUserRequest, encodeDeleteUserResponse),
+		RegisterHandler:   gt.NewServer(endpoint.RegisterEndpoint, decodeRegisterRequest, encodeRegisterResponse, opts),
+		GetUserHandler:    gt.NewServer(endpoint.GetUserEndpoint, decodeGetUserRequest, encodeGetUserResponse, opts),
+		ListUsersHandler:  gt.NewServer(endpoint.ListUserEndpoint, decodeListUsersRequest, encodeListUsersResponse, opts),
+		UpdateUserHandler: gt.NewServer(endpoint.UpdateUserEndpoint, decodeUpdateUserRequest, encodeUpdateUserResponse, opts),
+		DeleteUserHandler: gt.NewServer(endpoint.DeleteUserEndpoint, decodeDeleteUserRequest, encodeDeleteUserResponse, opts),
 	}
 }
 
