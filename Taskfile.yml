@@ -24,6 +24,7 @@ tasks:
       - go install github.com/bufbuild/buf/cmd/buf@v1.48.0
       - go install github.com/vektra/mockery/v2@v2.50.0
       - go install github.com/google/yamlfmt/cmd/yamlfmt@latest
+      - go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
   service:up:
     desc: "Start the service"
