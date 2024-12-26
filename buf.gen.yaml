@@ -4,6 +4,8 @@ managed:
   disable:
     - file_option: go_package_prefix
       module: buf.build/bufbuild/protovalidate
+    - file_option: go_package_prefix
+      module: buf.build/googleapis/googleapis
   override:
     - file_option: go_package_prefix
       value: github.com/OzkrOssa/idktd
@@ -15,5 +17,12 @@ plugins:
     out: api/proto/gen
     opt:
       - paths=source_relative
+  - remote: buf.build/grpc-ecosystem/gateway:v2.25.1
+    out: api/proto/gen
+    opt:
+    - paths=source_relative
+    - generate_unbound_methods=true
+  - remote: buf.build/grpc-ecosystem/openapiv2:v2.16.2
+    out: api/docs/openapiv2
 inputs:
   - directory: api/proto
