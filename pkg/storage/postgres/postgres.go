@@ -7,6 +7,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/OzkrOssa/idktd/pkg/config"
+	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,7 +34,15 @@ func New(ctx context.Context, config *config.DB) (*DB, error) {
 		config.Port,
 		config.Name,
 	)
-	pool, err := pgxpool.New(ctx, url)
+
+	cfg, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.ConnConfig.Tracer = otelpgx.NewTracer()
+
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return &DB{}, err
 	}
