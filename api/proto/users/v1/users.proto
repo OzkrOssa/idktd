@@ -4,13 +4,34 @@ package users.v1;
 
 import "google/protobuf/timestamp.proto";
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 
 service UserService {
-  rpc Register(RegisterRequest) returns (RegisterResponse);
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
-  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
-  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse){
+    option (google.api.http) = {
+      post: "/v1/users"
+    };
+  };
+  rpc GetUser(GetUserRequest) returns (GetUserResponse){
+    option (google.api.http) = {
+      get: "/v1/users/{id}"
+    };
+  };
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse){
+    option (google.api.http) = {
+      get: "/v1/users"
+    };
+  };
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse){
+    option (google.api.http) = {
+      put: "/v1/users/{id}"
+    };
+  };
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse){
+    option (google.api.http) = {
+      delete: "/v1/users/{id}"
+    };
+  };
 }
 
 enum Role {
